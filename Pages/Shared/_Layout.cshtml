@@ -1,6 +1,6 @@
 @inject ResortBookingSystem.Services.ResortSettingsService Settings
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,7 +12,10 @@
 <body>
     <div class="app-wrapper">
         <!-- SIDEBAR -->
-        <aside class="sidebar">
+        <!-- SIDEBAR OVERLAY (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <div class="brand-icon">
                     @if (!string.IsNullOrEmpty(Settings.Get().LogoImage))
@@ -113,9 +116,16 @@
             <!-- TOP HEADER -->
             <header class="top-header">
                 <div class="header-left">
+                    <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle menu">
+                        <i class="bi bi-list"></i>
+                    </button>
                     <h6 class="header-title">@ViewData["Title"]</h6>
                 </div>
                 <div class="header-right">
+                    <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+                        <i class="bi bi-sun-fill icon-sun"></i>
+                        <i class="bi bi-moon-fill icon-moon"></i>
+                    </button>
                     <div class="header-search">
                         <i class="bi bi-search"></i>
                         <input type="text" placeholder="Search..." id="globalSearch" />
@@ -192,6 +202,28 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ---- Theme toggle (dark/light mode) ----
+        (function() {
+            var saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            var html = document.documentElement;
+            var current = html.getAttribute('data-theme');
+            var next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            showToast(next === 'dark' ? 'Dark mode enabled' : 'Light mode enabled', 'info');
+        });
+
+        // ---- Sidebar toggle (mobile) ----
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+            document.body.classList.toggle('sidebar-open');
+        }
+
         // ---- Toast notification ----
         function showToast(message, type) {
             type = type || 'success';
