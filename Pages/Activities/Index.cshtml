@@ -1,0 +1,103 @@
+@page
+@model ResortBookingSystem.Pages.Activities.IndexModel
+@{ ViewData["Title"] = "Activities"; }
+
+<div class="filter-bar">
+    <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search activities..." id="actSearch" oninput="filterActivities(this.value)" />
+    </div>
+    <a asp-page="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Activity</a>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table class="table" id="actTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price/Hour</th>
+                    <th>Price/Day</th>
+                    <th>Max PAX</th>
+                    <th>Slots</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var activity in Model.Activities)
+                {
+                    <tr data-id="@activity.ActivityId">
+                        <td><strong>#@activity.ActivityId</strong></td>
+                        <td><strong>@activity.ActivityName</strong></td>
+                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@(activity.Description ?? "-")</td>
+                        <td>@(activity.PricePerHour?.ToString("N2") ?? "-")</td>
+                        <td>@(activity.PricePerDay?.ToString("N2") ?? "-")</td>
+                        <td>@activity.MaxParticipants pax</td>
+                        <td>@activity.Schedules.Count(s => s.Status == ScheduleStatus.Available) slots</td>
+                        <td><span class="badge @(activity.IsActive ? "badge-success" : "badge-danger")">@(activity.IsActive ? "Active" : "Inactive")</span></td>
+                        <td>
+                            <div class="table-actions">
+                                <a asp-page="Edit" asp-route-id="@activity.ActivityId" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <button class="btn-icon danger" title="Delete" onclick="confirmDelete(@activity.ActivityId, '@activity.ActivityName')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delete Activity Modal -->
+<div class="modal fade" id="deleteActivityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <input type="hidden" id="deleteActivityId" />
+            <div class="modal-header" style="background: rgba(231,76,60,0.1); border-bottom: 1px solid rgba(231,76,60,0.2);">
+                <h5 class="modal-title" style="color: var(--danger);"><i class="bi bi-trash"></i> Delete Activity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteActivityName"></strong>?</p>
+                <p class="text-muted" style="font-size: 13px;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="doDeleteActivity()"><i class="bi bi-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filterActivities(q) {
+        document.querySelectorAll('#actTable tbody tr').forEach(r => {
+            r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+        });
+    }
+    function confirmDelete(id, name) {
+        document.getElementById('deleteActivityId').value = id;
+        document.getElementById('deleteActivityName').textContent = name;
+        new bootstrap.Modal(document.getElementById('deleteActivityModal')).show();
+    }
+    function doDeleteActivity() {
+        var id = document.getElementById('deleteActivityId').value;
+        fetch('/Api/CrudApi?handler=DeleteActivity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + id
+        }).then(function(r) { return r.json(); }).then(function(d) {
+            bootstrap.Modal.getInstance(document.getElementById('deleteActivityModal')).hide();
+            if (d.success) {
+                var row = document.querySelector('#actTable tbody tr[data-id="' + id + '"]');
+                if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(function() { row.remove(); }, 300); }
+                showToast(d.message, 'success');
+            }
+        });
+    }
+</script>
+}

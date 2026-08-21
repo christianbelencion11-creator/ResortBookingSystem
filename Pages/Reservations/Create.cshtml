@@ -1,0 +1,221 @@
+@page
+@model ResortBookingSystem.Pages.Reservations.CreateModel
+@{ ViewData["Title"] = "New Reservation"; }
+
+<form method="post" id="mainForm">
+    <input type="hidden" asp-for="Input.ItemsJson" id="itemsJson" />
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card p-4 mb-3">
+                <h5 class="mb-3">Booking Details</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Guest Name</label>
+                        <input asp-for="Input.GuestName" class="form-control" placeholder="Full name" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phone</label>
+                        <input asp-for="Input.GuestPhone" class="form-control" placeholder="09XX XXX XXXX" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Check-In Date</label>
+                        <input asp-for="Input.CheckInDate" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Check-Out Date</label>
+                        <input asp-for="Input.CheckOutDate" type="date" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Special Requests</label>
+                    <textarea asp-for="Input.SpecialRequests" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-3">
+                <h5 class="mb-3">Add Room</h5>
+                <div class="row align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Room</label>
+                        <select asp-for="Input.SelectedRoomId" asp-items="Model.RoomList" class="form-select" id="roomSelect" onchange="updateRoomPrice()">
+                            <option value="">-- Select Room --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nights</label>
+                        <input asp-for="Input.RoomNights" type="number" min="1" value="1" class="form-control" id="roomNights" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Price/Night</label>
+                        <input id="roomPrice" type="number" step="0.01" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-success" onclick="addRoom()"><i class="bi bi-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-3">
+                <h5 class="mb-3">Add Activity</h5>
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Activity</label>
+                        <select asp-for="Input.SelectedActivityId" asp-items="Model.ActivityList" class="form-select" id="activitySelect" onchange="updateActivityPrice()">
+                            <option value="">-- Select Activity --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Qty</label>
+                        <input asp-for="Input.ActivityQty" type="number" min="1" value="1" class="form-control" id="activityQty" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Unit Price (₱)</label>
+                        <input asp-for="Input.ActivityPrice" type="number" step="0.01" class="form-control" id="activityPrice" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select asp-for="Input.ActivityPriceType" class="form-select" id="activityPriceType">
+                            <option value="Hour">Per Hour</option>
+                            <option value="Day">Per Day</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-success" onclick="addActivity()"><i class="bi bi-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h5 class="mb-3">Booking Summary</h5>
+                <div id="bookingSummary">
+                    <p class="text-muted text-center" id="emptySummary">No items added yet</p>
+                    <table class="table table-sm" id="summaryTable" style="display:none;">
+                        <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th></th></tr></thead>
+                        <tbody id="summaryTableBody"></tbody>
+                    </table>
+                        <div class="text-end fw-bold fs-5 text-success" id="totalWrapper" style="display:none;">
+                            Total: <span id="summaryTotal">₱0.00</span>
+                        </div>
+                </div>
+
+                <button type="submit" class="btn btn-resort w-100 mt-3" id="submitBtn">
+                    <i class="bi bi-check-circle"></i> Create Reservation
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    var activityPrices = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActivityPrices));
+    var bookingItems = [];
+
+    function updateRoomPrice() {
+        var select = document.getElementById('roomSelect');
+        var priceField = document.getElementById('roomPrice');
+        var selected = select.options[select.selectedIndex];
+        if (!selected || !selected.value) { priceField.value = ''; return; }
+        var match = selected.text.match(/₱([\d,]+(?:\.\d+)?)/);
+        if (match) priceField.value = match[1].replace(/,/g, '');
+        else priceField.value = '';
+    }
+
+    function updateActivityPrice() {
+        var select = document.getElementById('activitySelect');
+        var priceField = document.getElementById('activityPrice');
+        var selected = select.options[select.selectedIndex];
+        if (!selected || !selected.value) { priceField.value = '0'; return; }
+        priceField.value = activityPrices[parseInt(selected.value)] || '0';
+    }
+
+    function addRoom() {
+        var roomId = document.getElementById('roomSelect').value;
+        var nights = parseInt(document.getElementById('roomNights').value) || 1;
+        var price = parseFloat(document.getElementById('roomPrice').value);
+        if (!roomId) { alert('Select a room first'); return; }
+        if (!price) { alert('Room price not loaded'); return; }
+
+        var select = document.getElementById('roomSelect');
+        var text = select.options[select.selectedIndex].text;
+        var typeName = text.split(' - ')[1] || '';
+        var roomNumber = text.split(' - ')[0];
+
+        bookingItems.push({
+            description: 'Room ' + roomNumber + ' (' + typeName + ')',
+            type: 'Room',
+            referenceId: parseInt(roomId),
+            quantity: nights,
+            unitPrice: price,
+            subtotal: nights * price
+        });
+        renderSummary();
+    }
+
+    function addActivity() {
+        var activityId = document.getElementById('activitySelect').value;
+        var qty = parseInt(document.getElementById('activityQty').value) || 1;
+        var price = parseFloat(document.getElementById('activityPrice').value) || 0;
+        if (!activityId) { alert('Select an activity first'); return; }
+
+        var select = document.getElementById('activitySelect');
+        var name = select.options[select.selectedIndex].text;
+
+        bookingItems.push({
+            description: name,
+            type: 'Activity',
+            referenceId: parseInt(activityId),
+            quantity: qty,
+            unitPrice: price,
+            subtotal: qty * price
+        });
+        renderSummary();
+    }
+
+    function removeItem(index) {
+        bookingItems.splice(index, 1);
+        renderSummary();
+    }
+
+    function renderSummary() {
+        var tbody = document.getElementById('summaryTableBody');
+        var emptyEl = document.getElementById('emptySummary');
+        var totalEl = document.getElementById('summaryTotal');
+        var totalWrapper = document.getElementById('totalWrapper');
+        var tableEl = document.getElementById('summaryTable');
+
+        if (bookingItems.length === 0) {
+            emptyEl.style.display = 'block';
+            tableEl.style.display = 'none';
+            totalWrapper.style.display = 'none';
+            document.getElementById('itemsJson').value = '[]';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        tableEl.style.display = 'table';
+        totalWrapper.style.display = 'block';
+
+        var html = '';
+        var total = 0;
+        bookingItems.forEach(function(item, i) {
+            total += item.subtotal;
+            html += '<tr><td>' + item.description + '</td><td>' + item.quantity + '</td><td>₱' + item.subtotal.toFixed(2) + '</td>' +
+                '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(' + i + ')"><i class="bi bi-x"></i></button></td></tr>';
+        });
+        tbody.innerHTML = html;
+        totalEl.textContent = '₱' + total.toFixed(2);
+        document.getElementById('itemsJson').value = JSON.stringify(bookingItems);
+    }
+
+    document.getElementById('mainForm').addEventListener('submit', function() {
+        document.getElementById('itemsJson').value = JSON.stringify(bookingItems);
+    });
+
+    updateRoomPrice();
+</script>
+}

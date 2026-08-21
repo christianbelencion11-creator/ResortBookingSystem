@@ -1,0 +1,227 @@
+@page
+@model ResortBookingSystem.Pages.Admin.UsersModel
+@{ ViewData["Title"] = "User Management"; }
+
+<div class="filter-bar">
+    <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search by name or email..." id="userSearch" oninput="searchUsers(this.value)" />
+    </div>
+    <select class="form-select" style="width: auto; min-width: 160px;" onchange="filterByRole(this.value)">
+        <option value="">All Roles</option>
+        <option value="Admin">Admin</option>
+        <option value="Staff">Staff</option>
+        <option value="Guest">Guest</option>
+    </select>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <i class="bi bi-person-plus"></i> Add User
+    </button>
+</div>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table class="table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td>@user.UserId</td>
+                        <td><strong>@user.FullName</strong></td>
+                        <td>@user.Email</td>
+                        <td>@(user.PhoneNumber ?? "N/A")</td>
+                        <td><span class="badge badge-info">@user.Role.RoleName</span></td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <span class="badge badge-success"><span class="badge-dot"></span> Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger"><span class="badge-dot"></span> Inactive</span>
+                            }
+                        </td>
+                        <td>@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-icon" title="Edit" data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                        onclick="editUser(@user.UserId, '@user.FirstName', '@user.LastName', '@user.Email', '@user.PhoneNumber', @user.RoleId, @user.IsActive.ToString().ToLower())">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@user.UserId" class="d-inline">
+                                    <button type="submit" class="btn-icon @(user.IsActive ? "danger" : "")" title="@(user.IsActive ? "Deactivate" : "Activate")">
+                                        <i class="bi bi-@(user.IsActive ? "person-dash" : "person-check")"></i>
+                                    </button>
+                                </form>
+                                <button class="btn-icon danger" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                                        onclick="confirmDelete(@user.UserId, '@user.FullName')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddUser">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Add New User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">First Name</label>
+                            <input asp-for="NewUser.FirstName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input asp-for="NewUser.LastName" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input asp-for="NewUser.Email" type="email" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input asp-for="NewUser.PhoneNumber" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select asp-for="NewUser.RoleId" asp-items="Model.RoleList" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input asp-for="NewUser.PasswordHash" type="password" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-resort"><i class="bi bi-check-lg"></i> Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="EditUser">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" asp-for="EditUser.UserId" id="editUserId" />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">First Name</label>
+                            <input asp-for="EditUser.FirstName" class="form-control" id="editFirstName" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input asp-for="EditUser.LastName" class="form-control" id="editLastName" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input asp-for="EditUser.Email" type="email" class="form-control" id="editEmail" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input asp-for="EditUser.PhoneNumber" class="form-control" id="editPhone" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select asp-for="EditUser.RoleId" asp-items="Model.RoleList" class="form-select" id="editRoleId"></select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input asp-for="EditUser.IsActive" class="form-check-input" id="editIsActive" />
+                        <label class="form-check-label">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="DeleteUser">
+                <input type="hidden" name="UserId" id="deleteUserId" />
+                <div class="modal-header" style="background: rgba(231,76,60,0.1); border-bottom: 1px solid rgba(231,76,60,0.2);">
+                    <h5 class="modal-title" style="color: var(--danger);"><i class="bi bi-trash"></i> Delete User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteUserName"></strong>?</p>
+                    <p class="text-muted" style="font-size: 13px;">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function editUser(id, firstName, lastName, email, phone, roleId, isActive) {
+        document.getElementById('editUserId').value = id;
+        document.getElementById('editFirstName').value = firstName;
+        document.getElementById('editLastName').value = lastName;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editPhone').value = phone || '';
+        document.getElementById('editRoleId').value = roleId;
+        document.getElementById('editIsActive').checked = isActive === 'true';
+    }
+    function searchUsers(query) {
+        const rows = document.querySelectorAll('#usersTable tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+    function filterByRole(role) {
+        const rows = document.querySelectorAll('#usersTable tbody tr');
+        rows.forEach(row => {
+            if (!role) { row.style.display = ''; return; }
+            const roleCell = row.cells[4];
+            row.style.display = roleCell && roleCell.textContent.trim() === role ? '' : 'none';
+        });
+    }
+    function confirmDelete(id, name) {
+        document.getElementById('deleteUserId').value = id;
+        document.getElementById('deleteUserName').textContent = name;
+    }
+</script>
+}

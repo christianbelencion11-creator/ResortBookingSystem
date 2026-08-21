@@ -1,0 +1,109 @@
+@page
+@model ResortBookingSystem.Pages.IndexModel
+@{ ViewData["Title"] = "Dashboard"; }
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.TotalRooms</div>
+                <div class="stat-label">Total Rooms</div>
+            </div>
+            <div class="stat-icon green"><i class="bi bi-door-open"></i></div>
+        </div>
+        <div class="stat-change up"><i class="bi bi-check-circle"></i> @Model.AvailableRooms Available</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.ActiveReservations</div>
+                <div class="stat-label">Active Bookings</div>
+            </div>
+            <div class="stat-icon blue"><i class="bi bi-calendar-check"></i></div>
+        </div>
+        <div class="stat-change"><i class="bi bi-arrow-right"></i> Currently checked-in</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">₱@Model.MonthlyRevenue.ToString("N0")</div>
+                <div class="stat-label">Monthly Revenue</div>
+            </div>
+            <div class="stat-icon green"><i class="bi bi-cash-stack"></i></div>
+        </div>
+        <div class="stat-change up"><i class="bi bi-graph-up-arrow"></i> @DateTime.Now.ToString("MMMM yyyy")</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.PendingPayments</div>
+                <div class="stat-label">Pending Payments</div>
+            </div>
+            <div class="stat-icon orange"><i class="bi bi-clock-history"></i></div>
+        </div>
+        <div class="stat-change down"><i class="bi bi-exclamation-circle"></i> Needs attention</div>
+    </div>
+</div>
+
+<!-- Recent Reservations + Room Status -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+    <!-- Recent Reservations -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-calendar3"></i> Recent Reservations</h5>
+            <a asp-page="/Reservations/Index" class="btn btn-sm btn-outline">View All</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Guest</th>
+                        <th>Check-In</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.RecentReservations)
+                    {
+                        <tr>
+                            <td><strong>#@r.ReservationId</strong></td>
+                            <td>@(r.Guest?.FullName ?? r.User?.FullName ?? "N/A")</td>
+                            <td>@r.CheckInDate.ToString("MMM dd, yyyy")</td>
+                            <td><span class="status-badge status-@r.Status"><span class="status-dot"></span> @r.Status</span></td>
+                            <td><strong>₱@r.TotalAmount.ToString("N2")</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Room Status -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-pie-chart"></i> Room Status</h5>
+        </div>
+        <div class="card-body">
+            @foreach (var status in Model.RoomStatusSummary)
+            {
+                var color = status.Key switch {
+                    "Available" => "var(--success)",
+                    "Occupied" => "var(--info)",
+                    "UnderMaintenance" => "var(--warning)",
+                    "Reserved" => "var(--text-muted)",
+                    _ => "var(--text-muted)"
+                };
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: @color;"></div>
+                        <span style="font-size: 13px;">@status.Key</span>
+                    </div>
+                    <span style="font-weight: 600; font-size: 14px;">@status.Value</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>

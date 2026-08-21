@@ -1,0 +1,94 @@
+@page "{id:int}"
+@model ResortBookingSystem.Pages.Guests.DetailsModel
+@{ ViewData["Title"] = "Guest Details"; }
+
+<div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <a asp-page="Index" class="btn-icon" title="Back"><i class="bi bi-arrow-left"></i></a>
+    <h5 style="margin:0;">Guest Details</h5>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 2fr; gap:20px;">
+    <!-- Profile Card -->
+    <div class="card">
+        <div class="card-body" style="text-align:center;">
+            <div style="width:80px; height:80px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 12px;">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <h5 style="margin:0 0 4px;">@Model.Guest.FullName</h5>
+            <p style="color:var(--text-muted); font-size:13px; margin:0;">@(Model.Guest.Email ?? "No email")</p>
+            <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left;">
+                <div style="padding:12px; background:var(--content-bg); border-radius:8px;">
+                    <div style="font-size:11px; color:var(--text-muted);">Total Bookings</div>
+                    <div style="font-size:20px; font-weight:700; color:var(--primary);">@Model.TotalBookings</div>
+                </div>
+                <div style="padding:12px; background:var(--content-bg); border-radius:8px;">
+                    <div style="font-size:11px; color:var(--text-muted);">Total Spent</div>
+                    <div style="font-size:20px; font-weight:700; color:var(--primary);">₱@Model.TotalSpent.ToString("N0")</div>
+                </div>
+            </div>
+            <div style="margin-top:16px; text-align:left; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span style="color:var(--text-muted);">Phone</span>
+                    <span>@(Model.Guest.PhoneNumber ?? "-")</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span style="color:var(--text-muted);">ID Type</span>
+                    <span>@(Model.Guest.IdType ?? "-")</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span style="color:var(--text-muted);">ID Number</span>
+                    <span>@(Model.Guest.IdNumber ?? "-")</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0;">
+                    <span style="color:var(--text-muted);">Address</span>
+                    <span>@(Model.Guest.Address ?? "-")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation History -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-clock-history"></i> Reservation History</h5>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Reservation</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Nights</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Reservations.Any())
+                    {
+                        @foreach (var r in Model.Reservations)
+                        {
+                            <tr>
+                                <td><strong>#@r.ReservationId</strong></td>
+                                <td>@r.CheckInDate.ToString("MMM dd, yyyy")</td>
+                                <td>@r.CheckOutDate.ToString("MMM dd, yyyy")</td>
+                                <td>@r.Nights</td>
+                                <td>@r.ItemsCount</td>
+                                <td><strong>₱@r.TotalAmount.ToString("N2")</strong></td>
+                                <td>₱@r.AmountPaid.ToString("N2")</td>
+                                <td><span class="status-badge status-@r.Status"><span class="status-dot"></span> @r.Status</span></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">No reservations yet</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

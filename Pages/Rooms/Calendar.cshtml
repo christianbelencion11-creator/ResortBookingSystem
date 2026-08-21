@@ -1,0 +1,82 @@
+@page
+@model ResortBookingSystem.Pages.Rooms.CalendarModel
+@{
+    ViewData["Title"] = "Room Availability Calendar";
+    var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
+    var firstDay = new DateTime(Model.Year, Model.Month, 1);
+    var startDayOfWeek = ((int)firstDay.DayOfWeek + 6) % 7;
+}
+
+<div class="filter-bar">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <a asp-page="Calendar" asp-route-year="@(Model.Month == 1 ? Model.Year - 1 : Model.Year)" asp-route-month="@(Model.Month == 1 ? 12 : Model.Month - 1)" class="btn-icon" title="Previous"><i class="bi bi-chevron-left"></i></a>
+        <h5 style="margin:0; min-width:180px; text-align:center;">@Model.MonthName</h5>
+        <a asp-page="Calendar" asp-route-year="@(Model.Month == 12 ? Model.Year + 1 : Model.Year)" asp-route-month="@(Model.Month == 12 ? 1 : Model.Month + 1)" class="btn-icon" title="Next"><i class="bi bi-chevron-right"></i></a>
+        <a asp-page="Calendar" asp-route-year="@DateTime.Today.Year" asp-route-month="@DateTime.Today.Month" class="btn btn-outline btn-sm">Today</a>
+    </div>
+    <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted);">
+        <span><span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:var(--success); vertical-align:middle; margin-right:4px;"></span> Available</span>
+        <span><span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:var(--info); vertical-align:middle; margin-right:4px;"></span> Booked</span>
+        <span><span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:var(--warning); vertical-align:middle; margin-right:4px;"></span> Maintenance</span>
+    </div>
+</div>
+
+<div class="card">
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; min-width:800px;">
+            <thead>
+                <tr>
+                    <th style="padding:8px 12px; text-align:left; font-size:12px; color:var(--text-muted); background:#fafbfc; border-bottom:1px solid var(--border); min-width:140px;">Room</th>
+                    @for (int d = 1; d <= daysInMonth; d++)
+                    {
+                        var date = new DateTime(Model.Year, Model.Month, d);
+                        var isToday = date == DateTime.Today;
+                        <th style="padding:4px; text-align:center; font-size:11px; color:var(--text-muted); background:#fafbfc; border-bottom:1px solid var(--border); width:36px; @(isToday ? "background:var(--primary-bg); color:var(--primary); font-weight:700;" : "")">
+                            <div>@date.ToString("dd")</div>
+                            <div style="font-size:9px;">@date.ToString("ddd")</div>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var room in Model.Rooms)
+                {
+                    <tr>
+                        <td style="padding:6px 12px; border-bottom:1px solid var(--border); font-size:12px;">
+                            <strong>@room.RoomNumber</strong>
+                            <span style="font-size:11px; color:var(--text-muted); display:block;">@room.TypeName</span>
+                        </td>
+                        @for (int d = 1; d <= daysInMonth; d++)
+                        {
+                            var date = new DateTime(Model.Year, Model.Month, d);
+                            var booking = Model.Bookings.FirstOrDefault(b =>
+                                b.RoomId == room.RoomId && b.StartDate <= date && b.EndDate > date);
+                            var isToday = date == DateTime.Today;
+                            var cellStyle = "padding:2px; border-bottom:1px solid var(--border); border-left:1px solid var(--border);";
+                            var contentStyle = "";
+
+                            if (room.Status == RoomStatus.UnderMaintenance)
+                            {
+                                contentStyle = "background:rgba(245,166,35,0.2); border-radius:3px; height:28px;";
+                            }
+                            else if (booking != null)
+                            {
+                                contentStyle = "background:rgba(52,152,219,0.2); border-radius:3px; height:28px; position:relative; cursor:pointer;";
+                            }
+                            else
+                            {
+                                contentStyle = "background:rgba(67,185,127,0.08); border-radius:3px; height:28px;";
+                            }
+
+                            if (isToday) cellStyle += "background:rgba(67,185,127,0.04);";
+
+                            <td style="@cellStyle">
+                                <div style="@contentStyle" title="@(booking != null ? $"#{booking.ReservationId} {booking.GuestName}" : room.RoomNumber)"></div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

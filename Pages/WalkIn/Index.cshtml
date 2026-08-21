@@ -1,0 +1,330 @@
+@page
+@model ResortBookingSystem.Pages.WalkIn.IndexModel
+@{ ViewData["Title"] = "Walk-In Booking"; }
+
+<div class="stats-grid" style="margin-bottom: 20px;">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.AvailableRoomsCount</div>
+                <div class="stat-label">Available Rooms</div>
+            </div>
+            <div class="stat-icon green"><i class="bi bi-door-open"></i></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.TodayWalkIns</div>
+                <div class="stat-label">Today's Walk-Ins</div>
+            </div>
+            <div class="stat-icon blue"><i class="bi bi-person-plus"></i></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-value">@Model.ActiveWalkIns.Count</div>
+                <div class="stat-label">Active Walk-Ins</div>
+            </div>
+            <div class="stat-icon purple"><i class="bi bi-house-door"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Walk-Ins Table -->
+@if (Model.ActiveWalkIns.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Active Walk-In Bookings</h5>
+            <div style="position:relative; width:260px;">
+                <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                <input type="text" id="walkinSearch" class="form-control" placeholder="Search guest, phone, room..." style="padding-left:36px; font-size:13px;" oninput="filterWalkIns()" />
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="overflow-x: auto;">
+                <table class="table table-hover align-middle" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Guest</th>
+                            <th>Phone</th>
+                            <th>Room</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th style="width:140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="walkinTableBody">
+                        @foreach (var r in Model.ActiveWalkIns)
+                        {
+                            var roomItem = r.Items.FirstOrDefault(i => i.ItemType == ResortBookingSystem.Models.ItemType.Room);
+                            var guestName = r.Guest?.FullName ?? "N/A";
+                            var phone = r.Guest?.PhoneNumber ?? "N/A";
+                            var roomNum = roomItem != null ? $"Room #{roomItem.ReferenceId}" : "N/A";
+                            <tr data-search="@(guestName.ToLower()) @(phone.ToLower()) @(roomNum.ToLower()) #@r.ReservationId">
+                                <td><strong>#@r.ReservationId</strong></td>
+                                <td>@guestName</td>
+                                <td>@phone</td>
+                                <td>@roomNum</td>
+                                <td>@r.CheckInDate.ToString("MMM dd, yyyy")</td>
+                                <td>@r.CheckOutDate.ToString("MMM dd, yyyy")</td>
+                                <td>₱@r.TotalAmount.ToString("N2")</td>
+                                <td>₱@r.TotalPaid.ToString("N2")</td>
+                                <td class="@(r.Balance > 0 ? "text-danger" : "text-success fw-bold")">₱@r.Balance.ToString("N2")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" title="Edit" onclick="openEditModal(@r.ReservationId, '@(r.Guest?.FirstName) @(r.Guest?.LastName)', '@r.Guest?.PhoneNumber', '@r.Guest?.Email', '@r.Guest?.IdType', '@r.CheckInDate.ToString("yyyy-MM-dd")', '@r.CheckOutDate.ToString("yyyy-MM-dd")', '@r.SpecialRequests')">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success" title="Check Out" onclick="openCheckoutModal(@r.ReservationId, '@(r.Guest?.FullName ?? "N/A")')">
+                                        <i class="bi bi-box-arrow-right"></i> Out
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div id="walkinNoResults" style="display:none; text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">
+                <i class="bi bi-search" style="font-size:24px; display:block; margin-bottom:8px;"></i>No matching walk-ins found
+            </div>
+        </div>
+    </div>
+}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- Walk-In Form -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-person-plus"></i> New Walk-In Booking</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Guest Name *</label>
+                        <input asp-for="Input.GuestName" class="form-control" required placeholder="Full name" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input asp-for="Input.Phone" class="form-control" placeholder="09XX XXX XXXX" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input asp-for="Input.Email" type="email" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">ID Type</label>
+                        <select asp-for="Input.IdType" class="form-select">
+                            <option value="">Select ID</option>
+                            <option value="Drivers License">Driver's License</option>
+                            <option value="Passport">Passport</option>
+                            <option value="National ID">National ID</option>
+                            <option value="Senior Citizen ID">Senior Citizen ID</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Check-In *</label>
+                        <input asp-for="Input.CheckIn" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Check-Out *</label>
+                        <input asp-for="Input.CheckOut" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Guests</label>
+                        <input asp-for="Input.GuestCount" type="number" min="1" value="1" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Select Room *</label>
+                    <select asp-for="Input.RoomId" asp-items="Model.RoomList" class="form-select" required>
+                        <option value="">-- Select Available Room --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select asp-for="Input.PaymentMethod" class="form-select">
+                        <option value="Cash">Cash</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Maya">Maya</option>
+                        <option value="Card">Card</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Amount Paid</label>
+                    <input asp-for="Input.AmountPaid" type="number" step="0.01" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="2" placeholder="Special requests..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="bi bi-check-circle"></i> Process Walk-In Booking
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available Rooms Preview -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-list-check"></i> Available Rooms</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.AvailableRooms.Any())
+            {
+                @foreach (var room in Model.AvailableRooms)
+                {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;">
+                        <div>
+                            <strong>@room.RoomNumber</strong>
+                            <div style="font-size: 12px; color: var(--text-muted);">@room.RoomType.TypeName</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; color: var(--primary);">₱@room.RoomType.BasePrice.ToString("N0")</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Max @room.RoomType.MaxOccupancy pax</div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-door-closed"></i>
+                    <p>No available rooms</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="EditReservationId" id="editResId" />
+                <div class="modal-header" style="border-bottom:1px solid var(--border); padding:20px 24px;">
+                    <h5 class="modal-title" style="font-weight:700; font-size:16px;"><i class="bi bi-pencil"></i> Edit Walk-In</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding:24px;">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight:600; font-size:13px;">Guest Name *</label>
+                        <input asp-for="Input.GuestName" class="form-control" id="editGuestName" required style="border-radius:10px; padding:10px 14px;" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" style="font-weight:600; font-size:13px;">Phone</label>
+                            <input asp-for="Input.Phone" class="form-control" id="editPhone" style="border-radius:10px; padding:10px 14px;" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" style="font-weight:600; font-size:13px;">Email</label>
+                            <input asp-for="Input.Email" type="email" class="form-control" id="editEmail" style="border-radius:10px; padding:10px 14px;" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight:600; font-size:13px;">ID Type</label>
+                        <select asp-for="Input.IdType" class="form-select" id="editIdType" style="border-radius:10px; padding:10px 14px;">
+                            <option value="">Select ID</option>
+                            <option value="Drivers License">Driver's License</option>
+                            <option value="Passport">Passport</option>
+                            <option value="National ID">National ID</option>
+                            <option value="Senior Citizen ID">Senior Citizen ID</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" style="font-weight:600; font-size:13px;">Check-In</label>
+                            <input asp-for="Input.CheckIn" type="date" class="form-control" id="editCheckIn" style="border-radius:10px; padding:10px 14px;" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" style="font-weight:600; font-size:13px;">Check-Out</label>
+                            <input asp-for="Input.CheckOut" type="date" class="form-control" id="editCheckOut" style="border-radius:10px; padding:10px 14px;" />
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label" style="font-weight:600; font-size:13px;">Notes</label>
+                        <textarea asp-for="Input.Notes" class="form-control" rows="2" id="editNotes" style="border-radius:10px; padding:10px 14px;"></textarea>
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px; padding:0 24px 24px;">
+                    <button type="button" class="btn" data-bs-dismiss="modal" style="flex:1; padding:10px 0; border-radius:10px; font-weight:600; font-size:14px; background:var(--bg-secondary, #f0f0f0); color:var(--text); border:none;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1; padding:10px 0; border-radius:10px; font-weight:600; font-size:14px;"><i class="bi bi-check-lg"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Checkout Confirmation Modal -->
+<form method="post" asp-page-handler="Checkout" id="checkoutForm">
+    <input type="hidden" name="id" id="checkoutResId" />
+</form>
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+            <div class="modal-body text-center" style="padding:40px 32px 24px;">
+                <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#fff3cd,#ffe69c); display:inline-flex; align-items:center; justify-content:center; margin-bottom:20px;">
+                    <i class="bi bi-box-arrow-right" style="font-size:28px; color:#d4930d;"></i>
+                </div>
+                <h5 style="font-weight:700; margin-bottom:8px; font-size:18px;">Check Out Guest?</h5>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:0; line-height:1.5;">
+                    Are you sure you want to check out <strong id="checkoutGuestName"></strong>? The room will be marked as available.
+                </p>
+            </div>
+            <div style="display:flex; gap:12px; padding:0 24px 28px;">
+                <button type="button" class="btn" data-bs-dismiss="modal" style="flex:1; padding:10px 0; border-radius:10px; font-weight:600; font-size:14px; background:var(--bg-secondary, #f0f0f0); color:var(--text); border:none;">Cancel</button>
+                <button type="submit" form="checkoutForm" class="btn btn-success" style="flex:1; padding:10px 0; border-radius:10px; font-weight:600; font-size:14px;"><i class="bi bi-check-lg"></i> Check Out</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filterWalkIns() {
+        var query = document.getElementById('walkinSearch').value.toLowerCase();
+        var rows = document.querySelectorAll('#walkinTableBody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var text = row.getAttribute('data-search') || '';
+            if (!query || text.indexOf(query) !== -1) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        document.getElementById('walkinNoResults').style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    function openEditModal(id, name, phone, email, idType, checkIn, checkOut, notes) {
+        document.getElementById('editResId').value = id;
+        document.getElementById('editGuestName').value = name || '';
+        document.getElementById('editPhone').value = phone || '';
+        document.getElementById('editEmail').value = email || '';
+        document.getElementById('editIdType').value = idType || '';
+        document.getElementById('editCheckIn').value = checkIn || '';
+        document.getElementById('editCheckOut').value = checkOut || '';
+        document.getElementById('editNotes').value = notes || '';
+        new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+
+    function openCheckoutModal(id, name) {
+        document.getElementById('checkoutResId').value = id;
+        document.getElementById('checkoutGuestName').textContent = name;
+        new bootstrap.Modal(document.getElementById('checkoutModal')).show();
+    }
+</script>
+}

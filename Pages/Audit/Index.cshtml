@@ -1,0 +1,64 @@
+@page
+@model ResortBookingSystem.Pages.Audit.IndexModel
+@{ ViewData["Title"] = "Audit Log"; }
+
+<div class="filter-bar">
+    <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search by user, action, module, or details..." id="auditSearch" oninput="filterAudit(this.value)" />
+    </div>
+    <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterByAction(this, '')">All</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Login')">Login</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Create')">Create</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Update')">Update</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Check-In')">Check-In</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Payment')">Payment</button>
+        <button class="filter-tab" onclick="filterByAction(this, 'Alert')">Alert</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5><i class="bi bi-journal-text"></i> Activity Log</h5>
+        <span class="badge badge-info">@Model.Logs.Count entries</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="table" id="auditTable">
+            <thead>
+                <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Module</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.Logs)
+                {
+                    <tr data-action="@log.Action">
+                        <td style="font-family: monospace; font-size: 12px;">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td><strong>@log.User</strong></td>
+                        <td>
+                            <span class="badge @log.BadgeClass">@log.Action</span>
+                        </td>
+                        <td>@log.Module</td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@log.Details</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filterAudit(q) {
+        document.querySelectorAll('#auditTable tbody tr').forEach(function(r) {
+            r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+        });
+    }
+    function filterByAction(btn, action) {
+        document.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('#auditTable tbody tr').forEach(function(r) {
+            r.style.display = (!action || r.dataset.action === action) ? '' : 'none';
+        });
+    }
+</script>
+}

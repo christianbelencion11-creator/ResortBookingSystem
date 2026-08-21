@@ -1,0 +1,378 @@
+@inject ResortBookingSystem.Services.ResortSettingsService Settings
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @Settings.Get().ResortName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    @if (!string.IsNullOrEmpty(Settings.Get().LogoImage))
+                    {
+                        <img src="@Settings.Get().LogoImage" alt="Logo" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" />
+                    }
+                    else
+                    {
+                        <i class="bi bi-water"></i>
+                    }
+                </div>
+                <div>
+                    <div class="brand-text">@Settings.Get().ResortName</div>
+                    <div class="brand-sub">@Settings.Get().ResortSubtitle</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">Main</div>
+                <a class="sidebar-link" asp-page="/Index">
+                    <i class="bi bi-grid-1x2"></i> Dashboard
+                </a>
+
+                <div class="sidebar-section">Management</div>
+                <a class="sidebar-link" asp-page="/Rooms/Index">
+                    <i class="bi bi-door-open"></i> Rooms & Cottages
+                </a>
+                <a class="sidebar-link" asp-page="/Rooms/Calendar">
+                    <i class="bi bi-calendar3"></i> Availability Calendar
+                </a>
+                <a class="sidebar-link" asp-page="/Activities/Index">
+                    <i class="bi bi-compass"></i> Activities
+                </a>
+                <a class="sidebar-link" asp-page="/Facilities/Index">
+                    <i class="bi bi-building"></i> Facilities
+                </a>
+                <a class="sidebar-link" asp-page="/Guests/Index">
+                    <i class="bi bi-people"></i> Guest Management
+                </a>
+
+                <div class="sidebar-section">Operations</div>
+                <a class="sidebar-link" asp-page="/Reservations/Index">
+                    <i class="bi bi-calendar-check"></i> Reservations
+                    <span class="badge" id="pendingBadge"></span>
+                </a>
+                <a class="sidebar-link" asp-page="/CheckInOut/Index">
+                    <i class="bi bi-box-arrow-in-right"></i> Check-In / Out
+                </a>
+                <a class="sidebar-link" asp-page="/WalkIn/Index">
+                    <i class="bi bi-person-plus"></i> Walk-In
+                </a>
+
+                <div class="sidebar-section">Finance</div>
+                <a class="sidebar-link" asp-page="/Payments/Index">
+                    <i class="bi bi-credit-card"></i> Payments
+                </a>
+                <a class="sidebar-link" asp-page="/Expenses/Index">
+                    <i class="bi bi-wallet2"></i> Expenses
+                </a>
+
+                <div class="sidebar-section">Insights</div>
+                <a class="sidebar-link" asp-page="/Reports/Index">
+                    <i class="bi bi-bar-chart-line"></i> Reports
+                </a>
+                <a class="sidebar-link" asp-page="/Reports/Charts">
+                    <i class="bi bi-graph-up"></i> Charts
+                </a>
+                <a class="sidebar-link" asp-page="/Reports/Export">
+                    <i class="bi bi-download"></i> Export Data
+                </a>
+
+                <div class="sidebar-section">System</div>
+                <a class="sidebar-link" asp-page="/Notifications/Index">
+                    <i class="bi bi-bell"></i> Notifications
+                </a>
+                <a class="sidebar-link" asp-page="/Search/Index">
+                    <i class="bi bi-search"></i> Search
+                </a>
+                <a class="sidebar-link" asp-page="/Admin/Users">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a class="sidebar-link" asp-page="/Audit/Index">
+                    <i class="bi bi-journal-text"></i> Audit Log
+                </a>
+                <a class="sidebar-link" asp-page="/Settings/Index">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+                <a class="sidebar-link" asp-page="/Settings/Pricing">
+                    <i class="bi bi-cash-coin"></i> Seasonal Pricing
+                </a>
+                <a class="sidebar-link" asp-page="/Settings/Discounts">
+                    <i class="bi bi-tag"></i> Discount Codes
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- TOP HEADER -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h6 class="header-title">@ViewData["Title"]</h6>
+                </div>
+                <div class="header-right">
+                    <div class="header-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search..." id="globalSearch" />
+                    </div>
+                    <div class="notif-dropdown-wrapper">
+                        <button class="header-icon-btn" title="Notifications" id="notifBtn">
+                            <i class="bi bi-bell"></i>
+                            <span class="notif-dot" id="notifDot"></span>
+                        </button>
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-dropdown-header">
+                                <strong>Notifications</strong>
+                                <button class="btn btn-sm btn-link" onclick="clearNotifs()">Mark all read</button>
+                            </div>
+                            <div class="notif-dropdown-body" id="notifList">
+                                <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">Loading...</div>
+                            </div>
+                            <div class="notif-dropdown-footer">
+                                <a asp-page="/Notifications/Index">View all notifications</a>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="header-icon-btn" title="Refresh" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <div class="profile-dropdown-wrapper">
+                        <div class="header-avatar" title="Profile" id="profileBtn">
+                            <i class="bi bi-person-fill" id="headerAvatarIcon"></i>
+                            <img id="headerAvatarImg" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="Profile" />
+                        </div>
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div class="profile-dropdown-header">
+                                <div class="profile-avatar-lg" id="profileAvatarPreview">
+                                    <i class="bi bi-person-fill" id="dropdownAvatarIcon"></i>
+                                    <img id="dropdownAvatarImg" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="Profile" />
+                                </div>
+                                <div>
+                                    <div class="profile-name" id="profileDisplayName">Loading...</div>
+                                    <div class="profile-email" id="profileDisplayEmail"></div>
+                                </div>
+                            </div>
+                            <div class="profile-dropdown-body">
+                                <a class="profile-dropdown-item" asp-page="/Profile/Index">
+                                    <i class="bi bi-pencil-square"></i> Edit Profile
+                                </a>
+                                <a class="profile-dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('quickAvatarUpload').click();">
+                                    <i class="bi bi-camera"></i> Change Photo
+                                </a>
+                                <input type="file" id="quickAvatarUpload" accept="image/*" style="display:none;" onchange="uploadQuickAvatar(this)" />
+                                <a class="profile-dropdown-item" asp-page="/Settings/Index">
+                                    <i class="bi bi-gear"></i> Settings
+                                </a>
+                                <div class="profile-dropdown-divider"></div>
+                                <a class="profile-dropdown-item text-danger" asp-page="/Login/Index" asp-page-handler="Logout">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="top-header-spacer"></div>
+
+            <!-- PAGE CONTENT -->
+            <div class="page-content fade-in">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ---- Toast notification ----
+        function showToast(message, type) {
+            type = type || 'success';
+            var icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'toast-alert ' + type;
+            toast.innerHTML = '<i class="bi ' + icons[type] + ' toast-icon"></i><span>' + message + '</span><button class="toast-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>';
+            container.appendChild(toast);
+            setTimeout(function() { if (toast.parentElement) toast.remove(); }, 4000);
+        }
+
+        // Check URL for success param
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('success')) {
+                showToast(decodeURIComponent(params.get('success')), 'success');
+                var url = new URL(window.location);
+                url.searchParams.delete('success');
+                window.history.replaceState({}, '', url);
+            }
+        })();
+
+        // Highlight active sidebar link
+        document.querySelectorAll('.sidebar-link').forEach(function(link) {
+            if (link.href === window.location.href) {
+                link.classList.add('active');
+            }
+        });
+
+        // ---- Time ago helper ----
+        function timeAgo(dateStr) {
+            var diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' hour(s) ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + ' day(s) ago';
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // ---- Fetch notifications into dropdown ----
+        function loadNotifications() {
+            fetch('/Api/Notifications', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+                .then(function(r) { 
+                    if (!r.ok) throw new Error('Failed'); 
+                    return r.json(); 
+                })
+                .then(function(items) {
+                    var list = document.getElementById('notifList');
+                    if (!items || items.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;"><i class="bi bi-bell-slash" style="font-size:24px; display:block; margin-bottom:8px;"></i>No notifications</div>';
+                        document.getElementById('notifDot').style.display = 'none';
+                        return;
+                    }
+                    var html = '';
+                    items.forEach(function(n) {
+                        html += '<div class="notif-item">' +
+                            '<div class="notif-icon ' + n.color + '"><i class="bi ' + n.icon + '"></i></div>' +
+                            '<div><div class="notif-text">' + n.text + '</div>' +
+                            '<div class="notif-time">' + timeAgo(n.time) + '</div></div></div>';
+                    });
+                    list.innerHTML = html;
+                    document.getElementById('notifDot').style.display = items.length > 0 ? '' : 'none';
+                })
+                .catch(function() {
+                    var list = document.getElementById('notifList');
+                    list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">Failed to load</div>';
+                    document.getElementById('notifDot').style.display = 'none';
+                });
+        }
+
+        // ---- Fetch user profile for avatar + dropdown ----
+        function loadUserProfile() {
+            fetch('/Api/UserProfile').then(function(r) { return r.json(); }).then(function(u) {
+                document.getElementById('profileDisplayName').textContent = u.name || 'Admin';
+                document.getElementById('profileDisplayEmail').textContent = u.email || '';
+                if (u.image) {
+                    var headerImg = document.getElementById('headerAvatarImg');
+                    var headerIcon = document.getElementById('headerAvatarIcon');
+                    headerImg.src = u.image;
+                    headerImg.style.display = 'block';
+                    headerIcon.style.display = 'none';
+                    var dropImg = document.getElementById('dropdownAvatarImg');
+                    var dropIcon = document.getElementById('dropdownAvatarIcon');
+                    dropImg.src = u.image;
+                    dropImg.style.display = 'block';
+                    dropIcon.style.display = 'none';
+                }
+            });
+        }
+
+        // ---- Notification dropdown toggle ----
+        document.getElementById('notifBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('notifDropdown').classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.notif-dropdown-wrapper')) {
+                document.getElementById('notifDropdown').classList.remove('show');
+            }
+        });
+
+        function clearNotifs() {
+            document.getElementById('notifList').querySelectorAll('.notif-item.unread').forEach(function(el) {
+                el.classList.remove('unread');
+            });
+            document.getElementById('notifDot').style.display = 'none';
+        }
+
+        // ---- Profile dropdown toggle ----
+        document.getElementById('profileBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.profile-dropdown-wrapper')) {
+                document.getElementById('profileDropdown').classList.remove('show');
+            }
+        });
+
+        // ---- Global search: Enter key navigates to Search page ----
+        document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                var q = this.value.trim();
+                if (q) {
+                    window.location.href = '/Search?Query.Keyword=' + encodeURIComponent(q);
+                }
+            }
+        });
+
+        // ---- Load data on page load ----
+        loadNotifications();
+        loadUserProfile();
+
+        // ---- Preserve sidebar scroll position across navigations ----
+        var sidebarNav = document.querySelector('.sidebar-nav');
+        var savedScroll = sessionStorage.getItem('sidebarScroll');
+        if (savedScroll && sidebarNav) {
+            sidebarNav.scrollTop = parseInt(savedScroll);
+        }
+        if (sidebarNav) {
+            sidebarNav.addEventListener('scroll', function() {
+                sessionStorage.setItem('sidebarScroll', sidebarNav.scrollTop);
+            });
+        }
+
+        // ---- Quick avatar upload from dropdown ----
+        function uploadQuickAvatar(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var formData = new FormData();
+            formData.append('file', file);
+            fetch('/Api/UserProfile/Upload', {
+                method: 'POST',
+                body: formData
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                if (res.success) {
+                    // Update header avatar
+                    var headerImg = document.getElementById('headerAvatarImg');
+                    var headerIcon = document.getElementById('headerAvatarIcon');
+                    headerImg.src = res.image + '?t=' + Date.now();
+                    headerImg.style.display = 'block';
+                    headerIcon.style.display = 'none';
+                    // Update dropdown avatar
+                    var dropImg = document.getElementById('dropdownAvatarImg');
+                    var dropIcon = document.getElementById('dropdownAvatarIcon');
+                    dropImg.src = res.image + '?t=' + Date.now();
+                    dropImg.style.display = 'block';
+                    dropIcon.style.display = 'none';
+                    showToast('Profile photo updated!', 'success');
+                } else {
+                    showToast(res.error || 'Upload failed', 'danger');
+                }
+            }).catch(function() {
+                showToast('Upload failed', 'danger');
+            });
+            input.value = '';
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

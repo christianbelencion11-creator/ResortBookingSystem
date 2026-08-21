@@ -1,0 +1,109 @@
+@page
+@model ResortBookingSystem.Pages.Reports.IndexModel
+@{ ViewData["Title"] = "Reports & Analytics"; }
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-number text-success">₱@Model.Revenue.ToString("N0")</div>
+            <div class="stat-label">This Month Revenue</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card blue p-3">
+            <div class="stat-number" style="color:#0d6efd">@Model.TotalBookings</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card orange p-3">
+            <div class="stat-number" style="color:#fd7e14">@Model.OccupancyRate%</div>
+            <div class="stat-label">Occupancy Rate</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card purple p-3">
+            <div class="stat-number" style="color:#6f42c1">@Model.TotalGuests</div>
+            <div class="stat-label">Total Guests</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5><i class="bi bi-trophy"></i> Top Activities</h5>
+            <table class="table mb-0">
+                <thead><tr><th>Activity</th><th>Bookings</th><th>Revenue</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model.TopActivities)
+                    {
+                        <tr>
+                            <td>@a.Name</td>
+                            <td>@a.Bookings</td>
+                            <td class="text-success">₱@a.Revenue.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5><i class="bi bi-calendar-event"></i> Peak Booking Dates</h5>
+            <table class="table mb-0">
+                <thead><tr><th>Date</th><th>Bookings</th><th>Revenue</th></tr></thead>
+                <tbody>
+                    @foreach (var d in Model.PeakDates)
+                    {
+                        <tr>
+                            <td>@d.Date.ToString("MMM dd, yyyy")</td>
+                            <td>@d.Count</td>
+                            <td class="text-success">₱@d.Revenue.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5><i class="bi bi-door-open"></i> Room Occupancy</h5>
+            <table class="table mb-0">
+                <thead><tr><th>Room</th><th>Type</th><th>Status</th><th>Revenue</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.RoomReport)
+                    {
+                        <tr>
+                            <td>@r.RoomNumber</td>
+                            <td>@r.TypeName</td>
+                            <td><span class="badge badge-status @r.Status">@r.Status</span></td>
+                            <td class="text-success">₱@r.Revenue.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5><i class="bi bi-credit-card"></i> Payment Summary</h5>
+            <table class="table mb-0">
+                <thead><tr><th>Method</th><th>Transactions</th><th>Total</th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model.PaymentSummary)
+                    {
+                        <tr>
+                            <td>@m.Method</td>
+                            <td>@m.Count</td>
+                            <td class="text-success">₱@m.Total.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
