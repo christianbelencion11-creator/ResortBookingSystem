@@ -32,7 +32,7 @@ public class IndexModel : PageModel
         NetProfit = revenue - TotalExpenses;
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public IActionResult OnPost()
     {
         _store.Add(new ExpenseEntry { Date = Input.Date, Category = Input.Category, Description = Input.Description, Amount = Input.Amount, RecordedBy = "Admin" });
         return RedirectToPage(new { success = "Expense recorded successfully!" });

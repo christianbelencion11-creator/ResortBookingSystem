@@ -50,9 +50,29 @@ public class CreateModel : PageModel
             return Page();
         }
 
+        int? guestId = null;
+        if (!string.IsNullOrWhiteSpace(Input.GuestName))
+        {
+            var nameParts = Input.GuestName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            var firstName = nameParts.Length > 0 ? nameParts[0] : Input.GuestName;
+            var lastName = nameParts.Length > 1 ? nameParts[1] : "";
+
+            var guest = new GuestRecord
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                PhoneNumber = Input.GuestPhone,
+                CreatedAt = DateTime.Now
+            };
+            _db.GuestRecords.Add(guest);
+            await _db.SaveChangesAsync();
+            guestId = guest.GuestId;
+        }
+
         var reservation = new Reservation
         {
-            UserId = 1,
+            UserId = HttpContext.Session.GetInt32("UserId") ?? 1,
+            GuestId = guestId,
             CheckInDate = Input.CheckInDate,
             CheckOutDate = Input.CheckOutDate,
             SpecialRequests = Input.SpecialRequests,

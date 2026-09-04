@@ -40,11 +40,21 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostCheckInAsync(int id)
     {
-        var reservation = await _db.Reservations.FindAsync(id);
+        var reservation = await _db.Reservations
+            .Include(r => r.Items)
+            .FirstOrDefaultAsync(r => r.ReservationId == id);
+
         if (reservation != null)
         {
             reservation.Status = ReservationStatus.CheckedIn;
             reservation.UpdatedAt = DateTime.Now;
+
+            foreach (var item in reservation.Items.Where(i => i.ItemType == ItemType.Room))
+            {
+                var room = await _db.Rooms.FindAsync(item.ReferenceId);
+                if (room != null) room.Status = RoomStatus.Occupied;
+            }
+
             await _db.SaveChangesAsync();
         }
         return RedirectToPage(new { success = "Guest checked in successfully!" });

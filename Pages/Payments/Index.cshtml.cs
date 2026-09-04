@@ -27,6 +27,10 @@ public class IndexModel : PageModel
     public async Task OnGetAsync([FromQuery] int? reservationId)
     {
         Payments = await _db.Payments
+            .Include(p => p.Reservation)
+                .ThenInclude(r => r.Guest)
+            .Include(p => p.Reservation)
+                .ThenInclude(r => r.User)
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync();
 
@@ -36,6 +40,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        var reservation = await _db.Reservations.FindAsync(Input.ReservationId);
+        if (reservation == null)
+        {
+            ModelState.AddModelError(string.Empty, $"Reservation #{Input.ReservationId} not found.");
+            await OnGetAsync(null);
+            return Page();
+        }
+
         var payment = new Payment
         {
             ReservationId = Input.ReservationId,
@@ -48,6 +60,6 @@ public class IndexModel : PageModel
 
         _db.Payments.Add(payment);
         await _db.SaveChangesAsync();
-        return RedirectToPage(new { success = $"Payment of ₱{Input.Amount:N2} recorded successfully!" });
+        return RedirectToPage(new { success = $"Payment of ₱{Input.Amount:N2} recorded successfully for Reservation #{Input.ReservationId}!" });
     }
 }

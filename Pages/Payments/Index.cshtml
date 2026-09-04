@@ -10,19 +10,26 @@
         <div class="table-wrapper">
             <table class="table">
                 <thead>
-                    <tr><th>ID</th><th>Reservation</th><th>Amount</th><th>Method</th><th>Type</th><th>Date</th><th>Status</th></tr>
+                    <tr><th>ID</th><th>Reservation</th><th>Guest</th><th>Amount</th><th>Method</th><th>Type</th><th>Date</th><th>Status</th><th>Receipt</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var p in Model.Payments)
                     {
+                        var guestName = p.Reservation?.Guest?.FullName ?? p.Reservation?.User?.FullName ?? "N/A";
                         <tr>
                             <td><strong>#@p.PaymentId</strong></td>
-                            <td>#@p.ReservationId</td>
+                            <td><a asp-page="/Reservations/Details" asp-route-id="@p.ReservationId" class="text-decoration-none fw-semibold">#@p.ReservationId</a></td>
+                            <td>@guestName</td>
                             <td><strong style="color: var(--success);">₱@p.Amount.ToString("N2")</strong></td>
                             <td><span class="badge badge-info">@p.PaymentMethod</span></td>
                             <td>@p.PaymentType</td>
                             <td>@p.PaymentDate.ToString("MMM dd, HH:mm")</td>
                             <td><span class="status-badge status-@p.Status"><span class="status-dot"></span> @p.Status</span></td>
+                            <td>
+                                <a asp-page="/Receipt/Index" asp-route-id="@p.ReservationId" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2" title="View Receipt">
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                            </td>
                         </tr>
                     }
                 </tbody>

@@ -25,6 +25,12 @@ public class LoginModel : PageModel
 
     public void OnGet() { }
 
+    public IActionResult OnGetLogout()
+    {
+        HttpContext.Session.Clear();
+        return RedirectToPage("/Account/Login");
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
