@@ -1,16 +1,8 @@
-## .NET
-bin/
-obj/
-*.user
-*.suo
-*.cache
-*.dll
-*.exe
-*.pdb
-*.nupkg
-*.snupkg
-.vs/
-*.userprefs
+## PHP & General Web
+*.log
+.env
+.DS_Store
+Thumbs.db
 
 ## IDE
 .vscode/
@@ -18,12 +10,6 @@ obj/
 *.swp
 *~
 
-## OS
-.DS_Store
-Thumbs.db
-
-## uploads
-wwwroot/uploads/
-
-## secrets
-appsettings.Development.json
+## Temporary or cache
+tmp/
+temp/
